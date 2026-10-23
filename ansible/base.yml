@@ -1,0 +1,16 @@
+- name: Temel sunucu ayarları
+  hosts: all
+  become: true
+
+  tasks:
+    - name: QEMU guest agent kurulu olsun
+      ansible.builtin.apt:
+        name: qemu-guest-agent
+        state: present
+        update_cache: true
+
+    - name: QEMU guest agent çalışıyor olsun
+      ansible.builtin.systemd_service:
+        name: qemu-guest-agent
+        state: started
+        enabled: true

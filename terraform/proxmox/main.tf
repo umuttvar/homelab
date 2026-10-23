@@ -25,6 +25,10 @@ resource "proxmox_virtual_environment_vm" "k8s" {
     cores = 2
   }
 
+  agent {
+    enabled = true
+  }
+
   disk {
     datastore_id = "local-lvm"
     interface    = "scsi0"
