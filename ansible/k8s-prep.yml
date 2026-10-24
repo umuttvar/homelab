@@ -1,6 +1,8 @@
 - name: Kubernetes Ön Hazırlık
   hosts: all
   become: true
+  vars:
+    k8s_version: v1.36
 
   tasks:
     - name: Kubernetes modülleri yüklü olsun
@@ -34,17 +36,17 @@
         state: present
         update_cache: true
 
-    - name: containerd ayar klasörü var olsun                    
+    - name: containerd ayar klasörü var olsun
       ansible.builtin.file:
         path: /etc/containerd
         state: directory
 
-    - name: containerd varsayılan ayar dosyası oluşsun           
+    - name: containerd varsayılan ayar dosyası oluşsun
       ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
       args:
         creates: /etc/containerd/config.toml
 
-    - name: containerd systemd cgroup kullansın                  
+    - name: containerd systemd cgroup kullansın
       ansible.builtin.replace:
         path: /etc/containerd/config.toml
         regexp: '^(\s*)SystemdCgroup = false'
@@ -57,7 +59,36 @@
         state: started
         enabled: true
 
-  handlers:                                                      
+    - name: Kubernetes apt anahtarı indirilsin
+      ansible.builtin.get_url:
+        url: "https://pkgs.k8s.io/core:/stable:/{{ k8s_version }}/deb/Release.key"
+        dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+        mode: "0644"
+
+    - name: Kubernetes apt deposu tanımlı olsun
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/kubernetes.list
+        content: |
+          deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/{{ k8s_version }}/deb/ /
+
+    - name: kubelet, kubeadm, kubectl kurulu olsun
+      ansible.builtin.apt:
+        name: [kubelet, kubeadm, kubectl]
+        state: present
+        update_cache: true
+
+    - name: Kubernetes paketleri kilitli olsun
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop: [kubelet, kubeadm, kubectl]
+
+    - name: kubelet açılışta başlasın
+      ansible.builtin.systemd_service:
+        name: kubelet
+        enabled: true
+
+  handlers:
     - name: containerd yeniden başlasın
       ansible.builtin.systemd_service:
         name: containerd
