@@ -1,0 +1,4 @@
+[0;33mCONFIG_FILE() = /home/umut/homelab-platform/ansible/ansible.cfg[0m
+[0;33mDEFAULT_HOST_LIST(/home/umut/homelab-platform/ansible/ansible.cfg) = ['/home/umut/homelab-platform/ansible/inventory.ini'][0m
+
+GALAXY_SERVERS:
