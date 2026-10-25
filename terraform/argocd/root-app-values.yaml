@@ -5,7 +5,7 @@ applications:
       - resources-finalizer.argocd.argoproj.io
     project: default
     source:
-      repoURL: https://github.com/umuttvar/homelab-platform.git
+      repoURL: https://github.com/umuttvar/homelab.git
       targetRevision: main
       path: gitops/apps
     destination:
