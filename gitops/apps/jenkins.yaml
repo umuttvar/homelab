@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jenkins
+  namespace: argocd
+  finalizers:
+      - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+      repoURL: https://charts.jenkins.io
+      chart: jenkins
+      targetRevision: 5.10.4
+      helm:
+        valuesObject:
+          controller:
+            ingress:
+              enabled: true
+              ingressClassName: traefik
+              hostName: jenkins.192.168.0.250.nip.io
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: jenkins
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
