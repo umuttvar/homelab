@@ -1,0 +1,13 @@
+replicaCount: 3
+
+image:
+  repository: ghcr.io/umuttvar/homelab-app
+  tag: "6c547a9"
+
+containerPort: 8000
+
+service:
+  port: 80
+
+ingress:
+  host: app.192.168.0.250.nip.io

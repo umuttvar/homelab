@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name}}
+  labels:
+    app: {{ .Release.Name}}
+spec:
+  replicas: {{ .Values.replicaCount}}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name}}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name}}
+    spec:
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository}}:{{ .Values.image.tag}}"
+          ports: 
+           - containerPort: {{ .Values.containerPort}}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.containerPort}}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.containerPort}}
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
