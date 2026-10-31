@@ -9,7 +9,7 @@ spec:
   project: default
   source:
       repoURL: https://github.com/umuttvar/homelab.git
-      path: gitops/homelab-app/charts
+      path: gitops/charts/homelab-app
       targetRevision: main
       
   destination:
