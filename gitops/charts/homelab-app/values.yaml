@@ -2,7 +2,7 @@ replicaCount: 3
 
 image:
   repository: ghcr.io/umuttvar/homelab-app
-  tag: '5a748fa'
+  tag: 'bf7099a'
 
 containerPort: 8000
 
