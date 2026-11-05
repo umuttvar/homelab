@@ -1,92 +1,92 @@
 # homelab
 
-My home Kubernetes platform, built **fully as code** on my own Proxmox server.
+Kendi Proxmox sunucumda, **tamamen kod olarak** kurduğum Kubernetes platformu.
 
-🇹🇷 [Türkçe README](README.tr.md) · 🐍 App repo: [umuttvar/homelab-app](https://github.com/umuttvar/homelab-app) · 🧪 First version: [umuttvar/homelab-k8s](https://github.com/umuttvar/homelab-k8s)
+🇬🇧 [English README](README.md) · 🐍 Uygulama reposu: [umuttvar/homelab-app](https://github.com/umuttvar/homelab-app) · 🧪 İlk sürüm: [umuttvar/homelab-k8s](https://github.com/umuttvar/homelab-k8s)
 
-In my first homelab I set up most things by hand. In this version I wanted to rebuild everything with code, so I can delete it and build it again with the same result.
+İlk homelab'imde çoğu şeyi elle kurmuştum. Bu sürümde her şeyi kodla yeniden kurmak istedim; böylece silip tekrar kurduğumda aynı sonucu alabiliyorum.
 
-![End-to-end: code change, Jenkins commit and the new version running](docs/images/06-e2e-commit-curl.png)
+![Uçtan uca: kod değişikliği, Jenkins commit'i ve çalışan yeni sürüm](docs/images/06-e2e-commit-curl.png)
 
 ---
 
-## How it works
+## Nasıl çalışıyor?
 
 ```mermaid
 flowchart LR
     dev["git push<br/>homelab-app"] --> jenkins["Jenkins<br/>(Kaniko)"]
     jenkins -->|"image: commit hash"| ghcr["ghcr.io"]
-    jenkins -->|"update tag in values.yaml"| repo["homelab repo"]
+    jenkins -->|"values.yaml'da tag güncelle"| repo["homelab reposu"]
     repo --> argo["Argo CD"]
     argo -->|"deploy"| k8s["Kubernetes"]
-    ghcr -->|"pull image"| k8s
+    ghcr -->|"image çek"| k8s
 ```
 
-1. I push a change to the app repo.
-2. Jenkins sees the new commit, builds the image with Kaniko and pushes it to ghcr.io. The image tag is the short commit hash.
-3. Jenkins changes the image tag in `values.yaml` in this repo and pushes the commit.
-4. Argo CD sees the change in Git and deploys the new version.
+1. Uygulama reposuna bir değişiklik pushluyorum.
+2. Jenkins yeni commit'i görüyor, Kaniko ile image'ı build edip ghcr.io'ya gönderiyor. Image tag'i, commit hash'inin kısa hali.
+3. Jenkins bu repodaki `values.yaml`'da image tag'ini değiştirip commit'liyor.
+4. Argo CD Git'teki değişikliği görüyor ve yeni sürümü deploy ediyor.
 
-From `git push` to a new image takes about **48 seconds**. Argo CD deploys it a few minutes later. I don't run any command by hand.
+`git push`'tan yeni image'a kadar yaklaşık **48 saniye** sürüyor. Argo CD birkaç dakika içinde deploy ediyor. Elle hiçbir komut çalıştırmıyorum.
 
 ---
 
-## What I built
+## Neler kurdum?
 
-| Layer | Tools | What it does |
+| Katman | Araçlar | Ne yapıyor |
 |---|---|---|
-| VMs | Proxmox, Terraform | Creates 3 Ubuntu VMs from a cloud-init template |
-| Cluster | Ansible, kubeadm, containerd, Flannel | Prepares the VMs and builds a 3-node Kubernetes cluster |
-| GitOps | Terraform (Helm provider), Argo CD | Installs Argo CD and a root app (App of Apps) |
-| Platform | MetalLB, Traefik, local-path-provisioner | LoadBalancer IPs, Ingress and storage on bare metal |
-| CI | Jenkins, Kaniko | Builds and pushes images inside Kubernetes, without Docker |
-| App | Python (FastAPI), Docker, my own Helm chart | A small app with a `/health` endpoint |
+| VM'ler | Proxmox, Terraform | Cloud-init şablonundan 3 Ubuntu VM oluşturuyor |
+| Cluster | Ansible, kubeadm, containerd, Flannel | VM'leri hazırlayıp 3 node'lu bir Kubernetes cluster'ı kuruyor |
+| GitOps | Terraform (Helm provider), Argo CD | Argo CD'yi ve root app'i (App of Apps) kuruyor |
+| Platform | MetalLB, Traefik, local-path-provisioner | Bare metal'de LoadBalancer IP'leri, Ingress ve depolama |
+| CI | Jenkins, Kaniko | Image'ları Docker olmadan, Kubernetes içinde build edip gönderiyor |
+| Uygulama | Python (FastAPI), Docker, kendi Helm chart'ım | `/health` endpoint'i olan küçük bir uygulama |
 
-## Repository structure
+## Repo yapısı
 
 ```
-terraform/proxmox/    # 3 VMs
-ansible/              # OS prep + kubeadm cluster
+terraform/proxmox/    # 3 VM
+ansible/              # İşletim sistemi hazırlığı + kubeadm cluster
 terraform/platform/   # Argo CD + root app
-gitops/apps/          # Argo CD Applications (MetalLB, Traefik, Jenkins, app...)
+gitops/apps/          # Argo CD Application'ları (MetalLB, Traefik, Jenkins, uygulama...)
 gitops/metallb-config/
-gitops/charts/homelab-app/   # my Helm chart
+gitops/charts/homelab-app/   # kendi Helm chart'ım
 docs/images/
 ```
 
 ---
 
-## Screenshots
+## Ekran görüntüleri
 
 | | |
 |---|---|
-| ![Proxmox VMs](docs/images/01-proxmox-vms.png) | ![Cluster](docs/images/02-cluster-pods.png) |
-| ![Argo CD apps](docs/images/03-argocd-apps.png) | ![Argo CD root app](docs/images/04-argocd-root-tree.png) |
+| ![Proxmox VM'leri](docs/images/01-proxmox-vms.png) | ![Cluster](docs/images/02-cluster-pods.png) |
+| ![Argo CD uygulamaları](docs/images/03-argocd-apps.png) | ![Argo CD root app](docs/images/04-argocd-root-tree.png) |
 | ![Jenkins pipeline](docs/images/05-jenkins-pipeline.png) | |
 
 ---
 
-## Choices I made
+## Yaptığım tercihler
 
-- **local-path-provisioner for storage:** simple and enough for a homelab. The data stays on one node, so it is not highly available.
-- **Kaniko for builds:** it builds images without a Docker daemon or special permissions. The original project is archived, so I pinned the last version (`v1.24.0-debug`).
-- **Two GitHub tokens:** ghcr.io only accepts classic tokens, so that token has only `write:packages`. For writing to this repo I used a fine-grained token that can only change this one repo.
-- **Poll SCM instead of a webhook:** Jenkins runs in my home network and GitHub cannot reach it, so Jenkins checks for new commits every 3 minutes.
-- **Secrets are not in Git:** tokens are stored in Jenkins credentials and in local files with `chmod 600`.
+- **Depolama için local-path-provisioner:** Basit ve homelab için yeterli. Veri tek bir node'da duruyor, yani yüksek erişilebilirlik yok.
+- **Build için Kaniko:** Docker daemon'ı ve özel yetki olmadan image build ediyor. Orijinal proje arşivlendiği için son sürümü (`v1.24.0-debug`) sabitledim.
+- **İki GitHub token'ı:** ghcr.io sadece classic token kabul ediyor, o yüzden o token'da sadece `write:packages` yetkisi var. Bu repoya yazmak için ise sadece bu repoyu değiştirebilen fine-grained bir token kullandım.
+- **Webhook yerine Poll SCM:** Jenkins ev ağımda çalışıyor ve GitHub ona ulaşamıyor. Bu yüzden Jenkins 3 dakikada bir yeni commit olup olmadığına bakıyor.
+- **Secret'lar Git'te değil:** Token'lar Jenkins credentials'ta ve `chmod 600` ile korunan yerel dosyalarda duruyor.
 
-## Problems I had
+## Karşılaştığım sorunlar
 
-| Problem | Cause | Fix |
+| Sorun | Sebep | Çözüm |
 |---|---|---|
-| Jenkins pod failed after every restart | The chart's init script uses `yes n \| cp -i` with `set -e`. When the plugin files already exist, `cp` returns an error. | `controller.initializeOnce: true`. When I add a plugin, I delete the marker file and restart the pod. |
-| Argo CD did not install anything | `path` pointed to a file or the wrong folder | `path` must be the folder that has `Chart.yaml` (or the YAML files) |
-| Jenkins `sh` steps failed in the Kaniko container | The normal Kaniko image has no shell | Use the `-debug` image |
-| `git push` was rejected | Jenkins had already pushed commits to the same repo | `git pull --rebase`, never `--force` |
-| QEMU guest agent did not start | The VM had no agent channel | `agent { enabled = true }` in Terraform and a reboot |
+| Jenkins pod'u her yeniden başlatmada çöküyordu | Chart'ın init script'i `set -e` ile `yes n \| cp -i` kullanıyor. Plugin dosyaları zaten varsa `cp` hata döndürüyor. | `controller.initializeOnce: true`. Plugin eklediğimde işaret dosyasını silip pod'u yeniden başlatıyorum. |
+| Argo CD hiçbir şey kurmuyordu | `path` bir dosyayı ya da yanlış klasörü gösteriyordu | `path`, `Chart.yaml`'ın (ya da YAML dosyalarının) bulunduğu klasör olmalı |
+| Kaniko container'ında Jenkins `sh` adımları hata veriyordu | Normal Kaniko image'ında shell yok | `-debug` image'ını kullanmak |
+| `git push` reddedildi | Jenkins aynı repoya benden önce commit atmıştı | `git pull --rebase`, asla `--force` değil |
+| QEMU guest agent başlamıyordu | VM'de agent kanalı yoktu | Terraform'da `agent { enabled = true }` ve yeniden başlatma |
 
-## Next steps
+## Sonraki adımlar
 
-- [ ] Monitoring with Prometheus and Grafana
-- [ ] A test stage in the pipeline
-- [ ] Ingress for Argo CD
-- [ ] Jenkins credentials and config as code (JCasC)
+- [ ] Prometheus ve Grafana ile izleme
+- [ ] Pipeline'a test aşaması
+- [ ] Argo CD için Ingress
+- [ ] Jenkins credential'ları ve ayarlarını kod olarak yönetmek (JCasC)
