@@ -1,24 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring
+  name: jenkins
   namespace: argocd
   finalizers:
       - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-      repoURL: https://prometheus-community.github.io/helm-charts
-      chart: kube-prometheus-stack
-      targetRevision: v0.94.2
+      repoURL: https://charts.jenkins.io
+      chart: jenkins
+      targetRevision: 5.10.4
       helm:
         valuesObject:
-          grafana:
-            enabled: true
-            ingress: true
+          controller:
+            additionalPlugins:
+              - "pipeline-graph-view:  1100.v62e44688f1f6"
+            initializeOnce: true
+            ingress:
+              enabled: true
               ingressClassName: traefik
-              hosts:
-                - prometheus.192.168.0.250.nip.io
+              hostName: jenkins.192.168.0.250.nip.io
   destination:
     server: https://kubernetes.default.svc
     namespace: jenkins
